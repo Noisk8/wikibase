@@ -60,20 +60,151 @@ una carga RDF del repositorio. Consulta la [documentación de WDQS](https://gith
 
 [Configuración oficial de Wikibase Suite](https://github.com/wmde/wikibase-suite/blob/main/docker-compose.yml)
 
-## Trasladar la instalación a otro ordenador
+## Migrar la instancia completa a otro ordenador
 
-El repositorio contiene el despliegue, el código wiki y los recursos de diseño.
-Para migrar la wiki existente, restaura por separado una copia privada de MariaDB,
-`.env`, `data/config/`, `data/images/` y el volumen `quickstatements-data`.
-La base de datos conserva los IDs, el contenido y el historial de MediaWiki.
-Arranca la copia con `./iniciar.sh` y carga el RDF existente con
-`./cargar-rdf-wdqs.sh` si el índice SPARQL es nuevo.
+Usa la [Release del respaldo de Wikibase WMCO](https://github.com/Noisk8/wikibase/releases/tag/respaldo-wmco-20vqy1).
+Esta copia conserva los IDs locales, declaraciones, páginas, historial, cuentas, logo
+y configuración. Incluye los índices de búsqueda y SPARQL. Restaura en una
+carpeta vacía y conserva la instalación original hasta verificar la copia.
+
+### Dependencias
+
+- Docker Engine con Docker Compose v2 y acceso al daemon. En Linux, ejecuta
+  `docker info` y `docker compose version` para comprobarlo.
+- Bash, `tar` con soporte gzip, Python 3 y `curl`.
+- Acceso a GitHub para descargar el respaldo y a un registro Docker para descargar
+  las imágenes. Git y GitHub CLI son opcionales.
+- Un equipo x86-64 con al menos 8 GB de RAM disponible como referencia para la
+  suite. En ARM, verifica primero que existan variantes compatibles de todas las
+  imágenes. [Requisitos de Wikibase Suite](https://github.com/wmde/wikibase-suite/blob/main/docs/install/installer.md)
+- Puertos locales 8080 y 8834 disponibles, o los valores configurados en el
+  `.env` del respaldo. Conserva esas direcciones para mantener las IRIs locales
+  del grafo y las URL de OAuth de QuickStatements.
+
+### 1. Descargar la copia
+
+Descarga los seis archivos adjuntos de la Release y guárdalos en una misma
+carpeta. Si usas GitHub CLI, puedes descargarlos de una vez:
+
+```bash
+copia="$HOME/Descargas/wmco-respaldo"
+mkdir -p "$copia"
+gh release download respaldo-wmco-20vqy1 \
+  --repo Noisk8/wikibase --dir "$copia"
+```
+
+| Archivo | Contenido |
+|---|---|
+| `proyecto.tar.gz` | Compose, scripts, archivos del diseño y el `.env` original. |
+| `mariadb.tar.gz` | Directorio físico de MariaDB, con el contenido, los usuarios y el historial. |
+| `wikibase.tar.gz` | Configuración, imágenes, logo y datos de QuickStatements, incluido OAuth. |
+| `wdqs.tar.gz` | Índice RDF de Blazegraph. |
+| `opensearch.tar.gz` | Índice de búsqueda de OpenSearch. |
+| `imagenes.json` | Inventario de imágenes y plataformas del respaldo. |
+
+Los archivos contienen las claves de esta instancia educativa. La restauración
+usa el `.env` original para mantener la conexión entre los servicios.
+
+### 2. Preparar un proyecto vacío
+
+Cambia la ruta de `copia` si descargaste los archivos en otro lugar. Ejecuta
+los bloques siguientes en la misma terminal de Bash para conservar la variable
+y el nombre del proyecto.
+
+```bash
+copia="$HOME/Descargas/wmco-respaldo"
+destino=$(mktemp -d "$HOME/wmco-restaurado.XXXXXXXX")
+cd "$destino"
+
+umask 077
+tar -xzf "$copia/proyecto.tar.gz"
+chmod 600 .env
+mkdir -p data/database data/config data/images
+
+# Usar un nombre nuevo evita reutilizar volúmenes de otro despliegue.
+export COMPOSE_PROJECT_NAME="wmco-restaurado-$(date +%Y%m%d%H%M%S)"
+docker compose config --quiet
+docker compose pull
+```
+
+Como la copia de MariaDB y los índices son físicos, usa las mismas versiones
+y la misma plataforma que en `imagenes.json`. Las etiquetas de Docker pueden
+cambiar. Si tienes las imágenes originales en el otro equipo y las versiones
+del registro ya son distintas, puedes trasladarlas con `docker image save`
+y cargarlas con `docker image load` antes de restaurar. Si ya las cargaste,
+omite `docker compose pull` para conservar las versiones originales.
+
+### 3. Restaurar los archivos y volúmenes
+
+Ejecuta este bloque antes de iniciar los servicios. Cada comando usa un
+contenedor temporal para escribir el respaldo en el volumen correcto y mantener
+los permisos guardados. El bloque se detiene ante el primer error.
+
+```bash
+(
+  set -e
+  docker compose run --rm --no-deps -T --user 0 --entrypoint tar database \
+    -xzf - -C /var/lib/mysql < "$copia/mariadb.tar.gz"
+
+  docker compose run --rm --no-deps -T --user 0 --entrypoint tar wikibase \
+    -xzf - -C / < "$copia/wikibase.tar.gz"
+
+  docker compose run --rm --no-deps -T --user 0 --entrypoint tar wdqs \
+    -xzf - -C /wdqs/data < "$copia/wdqs.tar.gz"
+
+  docker compose run --rm --no-deps -T --user 0 --entrypoint tar elasticsearch \
+    -xzf - -C /usr/share/opensearch/data < "$copia/opensearch.tar.gz"
+)
+```
+
+Guarda el nombre del proyecto en el `.env` de esta copia para que Docker Compose
+use los mismos volúmenes cuando abras otra terminal. Este comando presupone que
+el `.env` del respaldo no traía otra línea `COMPOSE_PROJECT_NAME`:
+
+```bash
+printf '\nCOMPOSE_PROJECT_NAME=%s\n' "$COMPOSE_PROJECT_NAME" >> .env
+./iniciar.sh
+```
+
+### 4. Comprobar la copia
+
+1. Abre la [portada](http://localhost:8080/) y comprueba el logo y los enlaces a
+   Crear, Tutoriales, Federación y RDF.
+2. Abre [Tierra](http://localhost:8080/wiki/Item:Q5) y verifica que conserva
+   `Q5` en WMCO, `Q2` como ID de Wikidata y su relación con el sistema solar.
+   Comprueba también el historial de una guía.
+3. Abre [QuickStatements](http://localhost:8080/tools/quickstatements/) e inicia
+   sesión con una cuenta del respaldo.
+4. En el [editor SPARQL](http://localhost:8834/), ejecuta la consulta siguiente.
+   Debe devolver el sistema solar local con el ID de Wikidata `Q544`.
+
+```sparql
+PREFIX wmco: <http://localhost:8080/entity/>
+PREFIX wmcodt: <http://localhost:8080/prop/direct/>
+
+SELECT ?sistema ?idWikidata WHERE {
+  wmco:Q5 wmcodt:P2 ?sistema .
+  ?sistema wmcodt:P3 ?idWikidata .
+}
+```
+
+Si el servicio SPARQL responde pero faltan las declaraciones de la wiki,
+ejecuta `./cargar-rdf-wdqs.sh` y vuelve a probar. Si un servicio no arranca,
+usa `docker compose ps` y `docker compose logs --tail=80 <servicio>`.
+
+### Generar un respaldo actualizado
+
+En el ordenador que contiene la instancia en funcionamiento, ejecuta
+`./respaldo-completo.sh`. El script detiene los servicios para obtener una
+copia consistente, escribe los seis archivos en `backups/` y vuelve a iniciar
+los servicios que estaban activos.
+
+[Copias de seguridad y restauración de Wikibase Suite](https://github.com/wmde/wikibase-suite/blob/main/docs/operate/backup-and-restore.md)
+
+## Reutilizar solo el diseño
 
 Los archivos de `interfaz/` permiten reutilizar el diseño en una wiki nueva.
 Copia `wmco-interface.css` a `data/config/` y `wmco-brand.png` a `data/images/`.
 Consulta `LocalSettings.example.php` para integrar el registro del CSS y del
-logo en la configuración local. El ajuste de formato de URL presupone que
-`P4` es la propiedad local con ese significado. Ajusta los identificadores de
-la portada y sus enlaces según las entidades y páginas de la nueva wiki.
-
-[Copias de seguridad y restauración de Wikibase Suite](https://github.com/wmde/wikibase-suite/blob/main/docs/operate/backup-and-restore.md)
+logo. Si usas el formato de URL, ajusta el identificador de la propiedad al
+asignado en la nueva wiki. Revisa también los IDs y enlaces de la portada.
