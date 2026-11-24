@@ -1,0 +1,61 @@
+http:
+  routers:
+    wikibase:
+      entryPoints: [wiki]
+      priority: 1
+      rule: PathPrefix(`/`) && !Path(`/tools/quickstatements`) && !PathPrefix(`/tools/quickstatements/`)
+      service: wikibase
+    quickstatements:
+      entryPoints: [wiki]
+      rule: Path(`/tools/quickstatements`) || PathPrefix(`/tools/quickstatements/`)
+      service: quickstatements
+      middlewares: [quickstatements-slash, quickstatements-prefix]
+    quickstatements-components:
+      entryPoints: [wiki]
+      priority: 100
+      rule: PathPrefix(`/magnustools/public_html/resources/vue/`) && (Method(`GET`) || Method(`HEAD`))
+      service: quickstatements
+    wdqs-frontend:
+      entryPoints: [query]
+      rule: PathPrefix(`/`) && !Path(`/sparql`)
+      service: wdqs-frontend
+    wdqs:
+      entryPoints: [query]
+      rule: Path(`/sparql`) && (Method(`GET`) || Method(`POST`) || Method(`OPTIONS`))
+      service: wdqs
+      middlewares: [wdqs-path, wdqs-read-only]
+
+  middlewares:
+    quickstatements-slash:
+      redirectRegex:
+        regex: /tools/quickstatements$
+        replacement: /tools/quickstatements/
+    quickstatements-prefix:
+      stripPrefix:
+        prefixes: [/tools/quickstatements]
+    wdqs-path:
+      replacePath:
+        path: /bigdata/namespace/wdq/sparql
+    wdqs-read-only:
+      headers:
+        customRequestHeaders:
+          X-BIGDATA-READ-ONLY: 'yes'
+          X-BIGDATA-MAX-QUERY-MILLIS: '300000'
+
+  services:
+    wikibase:
+      loadBalancer:
+        servers:
+          - url: http://wikibase:80
+    quickstatements:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:80
+    wdqs-frontend:
+      loadBalancer:
+        servers:
+          - url: http://wdqs-frontend:80
+    wdqs:
+      loadBalancer:
+        servers:
+          - url: http://wdqs:9999

@@ -1,0 +1,60 @@
+__NOTOC__
+<div class="wmco-portal" style="margin: 1em 0 2em; color: #17372e;">
+<div class="wmco-hero" style="display: flex; flex-wrap: wrap; gap: 2em; align-items: center; padding: 2em; border: 1px solid #c6d8c8; border-radius: 20px; background: #edf4e7;">
+<div class="wmco-hero-copy" style="flex: 1 1 20em; min-width: 0;">
+<div class="wmco-kicker" style="font-weight: bold; letter-spacing: .12em; color: #30574b;">Wikibase WMCO</div>
+<h2 style="font-family: Georgia, serif; font-size: 2.4em; line-height: 1.05; border: 0; margin: .25em 0 .4em;">Explora el grafo.<br />Conecta los datos.</h2>
+<p>Aprende a modelar y consultar datos estructurados en Wikibase, y a relacionar las fichas de WMCO con sus equivalentes en Wikidata.</p>
+<div class="wmco-links" style="margin-top: 1em; line-height: 2;">
+<span class="wmco-primary" style="display: inline-block; padding: .2em .75em; background: #fff; border: 1px solid #558570; border-radius: 6px; margin-right: .55em;">[[Item:Q5|Explorar Tierra →]]</span>
+<span class="wmco-secondary" style="display: inline-block; padding: .2em .75em;">[[Federacion|Ver cómo se conectan los datos]]</span>
+</div>
+</div>
+<div class="wmco-graph" style="flex: 1 1 18em; min-width: 0; display: flex; flex-wrap: wrap; gap: .85em; padding: 1em; background: #dceade; border: 1px solid #b6ccbd; border-radius: 12px;">
+<div class="wmco-graph-local" style="flex: 1 1 8em; min-width: 0;">
+<span class="wmco-graph-caption" style="font-size: .8em; font-weight: bold; letter-spacing: .12em;">WMCO</span>
+<div class="wmco-node" style="background: #fff; border: 1px solid #a7c2ae; border-radius: 6px; margin: .4em 0; padding: .45em .6em;">[[Item:Q5|Tierra]] <small>Q5</small></div>
+<div class="wmco-edge" style="padding-left: .65em; font-size: .88em;">[[Property:P2|parte de]] ↓</div>
+<div class="wmco-node" style="background: #fff; border: 1px solid #a7c2ae; border-radius: 6px; margin: .4em 0; padding: .45em .6em;">[[Item:Q4|Sistema solar]] <small>Q4</small></div>
+</div>
+<div class="wmco-graph-remote" style="flex: 1 1 8em; min-width: 0;">
+<span class="wmco-graph-caption" style="font-size: .8em; font-weight: bold; letter-spacing: .12em;">WIKIDATA</span>
+<div class="wmco-node" style="background: #fff; border: 1px solid #a7c2ae; border-radius: 6px; margin: .4em 0; padding: .45em .6em;">[https://www.wikidata.org/entity/Q2 Tierra] <small>Q2</small></div>
+<div class="wmco-edge" style="padding-left: .65em; font-size: .88em;">[https://www.wikidata.org/wiki/Property:P361 parte de] ↓</div>
+<div class="wmco-node" style="background: #fff; border: 1px solid #a7c2ae; border-radius: 6px; margin: .4em 0; padding: .45em .6em;">[https://www.wikidata.org/entity/Q544 Sistema solar] <small>Q544</small></div>
+</div>
+<div class="wmco-graph-note" style="flex: 1 1 100%; border-top: 1px solid #a7c2ae; padding-top: .65em; font-size: .9em;">[[Property:P3|ID de Wikidata]] vincula las fichas de ambos repositorios.</div>
+</div>
+</div>
+
+<div class="wmco-paths" style="display: flex; flex-wrap: wrap; gap: 1em; margin-top: 1em;">
+<div class="wmco-card wmco-explore" style="flex: 1 1 15em; min-width: 0; padding: 1em 1.2em; background: #fbfaf5; border: 1px solid #d5ded3; border-top: 4px solid #358067; border-radius: 12px;">
+<h2 style="font-family: Georgia, serif; font-size: 2.4em; line-height: 1.05; border: 0; margin: .25em 0 .4em;">Explorar</h2>
+<p>Abre las fichas y sigue sus relaciones, o consulta el grafo local.</p>
+<ul>
+<li>[[Item:Q5|Tierra y sus declaraciones]]</li>
+<li>[[Special:ListProperties|Lista de propiedades]]</li>
+<li>[__WMCO_QUERY_URL__ Consultas SPARQL]</li>
+</ul>
+</div>
+<div class="wmco-card wmco-learn" style="flex: 1 1 15em; min-width: 0; padding: 1em 1.2em; background: #fbfaf5; border: 1px solid #d5ded3; border-top: 4px solid #9b6c29; border-radius: 12px;">
+<h2>Aprender</h2>
+<p>Sigue los ejercicios y descubre cómo se representan y conectan los datos.</p>
+<ul>
+<li>[[Tutoriales|Tutoriales]]</li>
+<li>[[Crear|Crear propiedades y elementos]]</li>
+<li>[[Federacion|Federación con Wikidata]]</li>
+<li>[[Old-rdf|RDF y datos enlazados]]</li>
+</ul>
+</div>
+<div class="wmco-card wmco-edit" style="flex: 1 1 15em; min-width: 0; padding: 1em 1.2em; background: #fbfaf5; border: 1px solid #d5ded3; border-top: 4px solid #4d6898; border-radius: 12px;">
+<h2>Contribuir</h2>
+<p>Crea una ficha desde la wiki o carga varias declaraciones de una vez.</p>
+<ul>
+<li>[[Special:NewItem|Crear un elemento]]</li>
+<li>[[Special:NewProperty|Crear una propiedad]]</li>
+<li>[__WMCO_QS_URL__ Abrir QuickStatements]</li>
+</ul>
+</div>
+</div>
+</div>

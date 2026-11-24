@@ -1,0 +1,172 @@
+.wmco-portal {
+  --wmco-ink: #142d28;
+  --wmco-muted: #455c55;
+  --wmco-paper: #fbfaf5;
+  --wmco-line: #d5ded3;
+  margin-block: 1rem 2.5rem;
+  color: var(--wmco-ink);
+}
+
+.wmco-portal .wmco-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: clamp(1.4rem, 4vw, 3.5rem);
+  align-items: center;
+  padding: clamp(1.4rem, 5vw, 4rem);
+  border: 1px solid var(--wmco-line);
+  border-radius: 1.5rem;
+  background: radial-gradient(ellipse at 91% 10%, #e0edd5 0%, transparent 50%), var(--wmco-paper);
+}
+
+.wmco-portal .wmco-kicker,
+.wmco-portal .wmco-graph-caption {
+  color: #3e6557;
+  font-size: .73rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.wmco-portal .wmco-hero h2 {
+  margin: .55rem 0 1rem;
+  padding: 0;
+  border: 0;
+  color: var(--wmco-ink);
+  font-family: Georgia, serif;
+  font-size: clamp(2rem, 4.8vw, 4.3rem);
+  line-height: 1;
+  letter-spacing: -.055em;
+}
+
+.wmco-portal p {
+  color: var(--wmco-muted);
+  line-height: 1.6;
+}
+
+.wmco-portal .wmco-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+  margin-top: 1.3rem;
+}
+
+.wmco-portal .wmco-links a {
+  display: inline-block;
+  padding: .66rem .95rem;
+  border: 1px solid #2d5b4c;
+  border-radius: .5rem;
+  font-weight: 700;
+}
+
+.wmco-portal .wmco-primary a {
+  background: #254d40;
+  color: #fff;
+}
+
+.wmco-portal .wmco-secondary a {
+  background: #fff;
+  color: #244f42;
+}
+
+.wmco-portal .wmco-graph {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .9rem;
+  padding: 1.15rem;
+  border: 1px solid #c0cfbf;
+  border-radius: 1rem;
+  background: #edf4e9;
+}
+
+.wmco-portal .wmco-node {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .25rem .55rem;
+  margin-top: .35rem;
+  padding: .55rem .65rem;
+  border: 1px solid #bdd0c2;
+  border-radius: .45rem;
+  background: #fff;
+  font-weight: 700;
+}
+
+.wmco-portal .wmco-graph-remote .wmco-node {
+  border-style: dashed;
+}
+
+.wmco-portal .wmco-node a,
+.wmco-portal .wmco-card a,
+.wmco-portal .wmco-graph-note a,
+.wmco-portal .wmco-edge a {
+  color: #186047;
+}
+
+.wmco-portal .wmco-node small {
+  color: #53665c;
+  font-family: monospace;
+  font-weight: 400;
+}
+
+.wmco-portal .wmco-edge {
+  margin-top: .4rem;
+  padding-left: .65rem;
+  font-size: .83rem;
+}
+
+.wmco-portal .wmco-graph-note {
+  grid-column: 1 / -1;
+  padding-top: .7rem;
+  border-top: 1px solid #c0cfbf;
+  color: #43574e;
+  font-size: .8rem;
+}
+
+.wmco-portal .wmco-paths {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.wmco-portal .wmco-card {
+  padding: 1.2rem 1.35rem;
+  border: 1px solid var(--wmco-line);
+  border-top: .25rem solid #358067;
+  border-radius: .8rem;
+  background: var(--wmco-paper);
+}
+
+.wmco-portal .wmco-learn {
+  border-top-color: #9b6c29;
+}
+
+.wmco-portal .wmco-edit {
+  border-top-color: #4d6898;
+}
+
+.wmco-portal .wmco-card h2 {
+  margin: 0;
+  border: 0;
+  color: var(--wmco-ink);
+  font-family: Georgia, serif;
+  font-size: 1.6rem;
+}
+
+.wmco-portal .wmco-card ul {
+  margin-bottom: 0;
+  line-height: 1.75;
+}
+
+.wmco-portal a:focus-visible {
+  outline: 2px solid #285998;
+  outline-offset: 3px;
+}
+
+@media (max-width: 880px) {
+  .wmco-portal .wmco-hero,
+  .wmco-portal .wmco-paths {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

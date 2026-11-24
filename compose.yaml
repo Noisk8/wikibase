@@ -1,0 +1,176 @@
+name: wmco-wikibase
+
+x-wiki-environment: &wiki-environment
+  DB_SERVER: database:3306
+  DB_NAME: wikibase
+  DB_USER: wikibase
+  DB_PASS: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+  MW_ADMIN_NAME: ${MW_ADMIN_NAME:-Admin}
+  MW_ADMIN_PASS: ${MW_ADMIN_PASSWORD:?Falta MW_ADMIN_PASSWORD en .env}
+  MW_ADMIN_EMAIL: ${MW_ADMIN_EMAIL:-admin@example.org}
+  MW_WG_SERVER: http://localhost:${WIKIBASE_PORT:-8080}
+  MW_WG_SITENAME: Wikibase WMCO
+  MW_WG_LANGUAGE_CODE: es
+  METADATA_CALLBACK: 'false'
+  ELASTICSEARCH_HOST: elasticsearch
+  QUICKSTATEMENTS_PUBLIC_URL: http://localhost:${WIKIBASE_PORT:-8080}/tools/quickstatements
+  WDQS_PUBLIC_ENDPOINT_URL: http://localhost:${WDQS_PORT:-8834}/sparql
+  WDQS_PUBLIC_FRONTEND_URL: http://localhost:${WDQS_PORT:-8834}
+
+services:
+  database:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: wikibase
+      MARIADB_USER: wikibase
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Falta DB_ROOT_PASSWORD en .env}
+    volumes:
+      - ./data/database:/var/lib/mysql
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  wikibase:
+    image: wikibase/wikibase:8.1.2
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    environment: *wiki-environment
+    volumes:
+      - ./data/config:/config
+      - ./data/images:/var/www/html/images
+      - quickstatements-data:/quickstatements/data
+    healthcheck:
+      test: [CMD-SHELL, 'test -s /config/InstanceSettings.php && curl -fsS "http://localhost/w/api.php?action=query&meta=siteinfo&format=json" > /dev/null']
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 120s
+
+  jobrunner:
+    image: wikibase/wikibase:8.1.2
+    command: [jobrunner]
+    restart: unless-stopped
+    depends_on:
+      wikibase:
+        condition: service_healthy
+    environment: *wiki-environment
+    volumes:
+      - ./data/config:/config
+      - ./data/images:/var/www/html/images
+      - quickstatements-data:/quickstatements/data
+
+  elasticsearch:
+    image: wikibase/opensearch:1
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      DISABLE_INSTALL_DEMO_CONFIG: 'true'
+      DISABLE_PERFORMANCE_ANALYZER_AGENT_CLI: 'true'
+      DISABLE_SECURITY_PLUGIN: 'true'
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: [CMD-SHELL, 'curl -fsS http://localhost:9200/ > /dev/null']
+      interval: 10s
+      start_period: 2m
+      retries: 12
+
+  wdqs:
+    image: wikibase/wdqs:2
+    command: /runBlazegraph.sh
+    restart: unless-stopped
+    ulimits: &wdqs-ulimits
+      nofile:
+        soft: 32768
+        hard: 32768
+    volumes:
+      - wdqs-data:/wdqs/data
+    healthcheck:
+      test: [CMD-SHELL, 'curl -fsS http://localhost:9999/bigdata/namespace/wdq/sparql > /dev/null']
+      interval: 10s
+      start_period: 2m
+      retries: 12
+
+  wdqs-updater:
+    image: wikibase/wdqs:2
+    command: /runUpdate.sh
+    restart: unless-stopped
+    depends_on:
+      wikibase:
+        condition: service_healthy
+      wdqs:
+        condition: service_healthy
+    ulimits: *wdqs-ulimits
+    environment:
+      WIKIBASE_CONCEPT_URI: http://localhost:${WIKIBASE_PORT:-8080}
+
+  wdqs-frontend:
+    image: wikibase/wdqs-frontend:2
+    restart: unless-stopped
+    volumes:
+      - ./data/config:/config
+    environment:
+      LANGUAGE: es
+      WDQS_PUBLIC_URL: http://localhost:${WDQS_PORT:-8834}/sparql
+      WIKIBASE_PUBLIC_URL: http://localhost:${WIKIBASE_PORT:-8080}/w/api.php
+    healthcheck:
+      test: [CMD-SHELL, 'curl -fsS http://localhost/ > /dev/null']
+      interval: 10s
+      start_period: 30s
+      retries: 12
+
+  quickstatements:
+    image: wikibase/quickstatements:1
+    restart: unless-stopped
+    depends_on:
+      wikibase:
+        condition: service_healthy
+    # Keep the same localhost URL for browser and server-side OAuth requests.
+    network_mode: service:traefik
+    volumes:
+      - quickstatements-data:/quickstatements/data
+      - ./config/quickstatements-components.conf:/etc/apache2/conf-enabled/quickstatements-components.conf:ro
+    environment:
+      QUICKSTATEMENTS_PUBLIC_URL: http://localhost:${WIKIBASE_PORT:-8080}/tools/quickstatements
+      WIKIBASE_PUBLIC_URL: http://localhost:${WIKIBASE_PORT:-8080}
+      LANGUAGE_CODE: es
+      SITENAME: Wikibase WMCO
+    healthcheck:
+      test: [CMD-SHELL, 'curl -fsS http://localhost:80/ > /dev/null']
+      interval: 10s
+      start_period: 30s
+      retries: 12
+
+  traefik:
+    image: traefik:3
+    restart: unless-stopped
+    command:
+      - --entrypoints.wiki.address=:${WIKIBASE_PORT:-8080}
+      - --entrypoints.query.address=:${WDQS_PORT:-8834}
+      - --providers.file.filename=/etc/traefik/routes.yml
+      - --ping=true
+      - --ping.entrypoint=wiki
+    ports:
+      - '127.0.0.1:${WIKIBASE_PORT:-8080}:${WIKIBASE_PORT:-8080}'
+      - '127.0.0.1:${WDQS_PORT:-8834}:${WDQS_PORT:-8834}'
+    volumes:
+      - ./config/traefik.yml:/etc/traefik/routes.yml:ro
+    healthcheck:
+      test: [CMD, traefik, healthcheck, --ping, '--ping.entrypoint=wiki', '--entrypoints.wiki.address=:${WIKIBASE_PORT:-8080}']
+      interval: 10s
+      retries: 5
+
+volumes:
+  quickstatements-data:
+  wdqs-data:
+  opensearch-data:
